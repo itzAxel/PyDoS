@@ -84,12 +84,6 @@ while True:
                         print(col.RED+'PRESS Ctrl+V to out Request Error , object cloused or your IP blocked, trying to connect...')
                         print(col.STOP)
 
-        file = open('logs/'+str(current_date)+'.txt', "a")
-        file.write(site)
-        file.write(' ,minute:')
-        file.write(str(current_datetime.minute))
-        file.write(' , ')
-        file.close()
         print(col.GREEN +'DoS successfully started to:', site)
         print(col.STOP)
         while True:
