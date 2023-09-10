@@ -40,10 +40,7 @@ while True:
                     break
                 except:
                     print(col.RED+'[!]',col.YELLOW+"Invalid URL!")
-                    site = input(col.PURPLE+'(to out enter exit)Enter object URL: >>>')
-                    if site=='exit':
-                        break
-            continue
+                    site = input(col.PURPLE+'Enter object URL: >>>')
         
         else:
             while True:
